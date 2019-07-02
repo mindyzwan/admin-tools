@@ -1,0 +1,72 @@
+function onOpen() {
+  var menu = SpreadsheetApp.getUi().createAddonMenu();
+  menu.addItem('Prepare Sheet', 'prepareSheet_');
+  menu.addItem('Start Daily Reminders', 'StartButton_');
+  menu.addItem('Send Emails Now', 'EmailRemindersGeneral');
+  menu.addItem('Stop Daily Reminders','deleteTrigger_');
+  menu.addToUi();
+    }
+    
+function onInstall() {
+    onOpen();
+    }
+
+function StartButton_(){
+  createTrigger();
+}
+
+function createTrigger() {
+  ScriptApp.newTrigger('EmailRemindersGeneral')
+  .timeBased()
+  .everyDays(1)
+  .atHour(13)
+  .create();
+}
+
+function deleteTrigger_(){
+ var triggers = ScriptApp.getProjectTriggers();
+  
+ for (var i = 0; i < triggers.length; i++) {
+   ScriptApp.deleteTrigger(triggers[i]);
+ }
+}
+
+function prepareSheet_() {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var headers = [
+    'Send',
+    'Email',
+    'Subject',
+    'Message'];
+  sheet.getRange('W1:Z1').setValues([headers]).setFontWeight('bold');
+}
+
+function EmailRemindersGeneral() {
+  //Skip week-end
+  var day = new Date();
+    if (day.getDay()>5 || day.getDay()==0) {
+      return;}
+   
+      //Rest of code
+      var SS = SpreadsheetApp.getActiveSpreadsheet();
+      var ss = SS.getActiveSheet();
+      var url = '';
+      url += SS.getUrl();
+      url += '#gid=';
+      url += ss.getSheetId();
+  
+      var sheet = SpreadsheetApp.getActiveSheet();
+      var range = sheet.getRange("A2:Z");
+      var UserData = range.getDisplayValues();
+      
+      for (i in UserData) {
+        var row = UserData[i];
+        if(row[22] == 'Y') {
+          var email = row[23];
+          var subject = row[24];
+          var message = row[25] + '\n\nLink to spreadsheet: ' + url;
+          MailApp.sendEmail(email, subject, message);
+    }
+  }
+}
+
