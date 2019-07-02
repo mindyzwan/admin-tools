@@ -1,8 +1,8 @@
 function onOpen() {
   var menu = SpreadsheetApp.getUi().createAddonMenu();
   menu.addItem('Prepare Sheet', 'prepareSheet_');
-  menu.addItem('Start Daily Reminders', 'StartButton_');
-  menu.addItem('Send Emails Now', 'EmailRemindersGeneral');
+  menu.addItem('Start Daily Reminders', 'createTrigger_');
+  menu.addItem('Send Emails Now', 'emailRemindersGeneral');
   menu.addItem('Stop Daily Reminders','deleteTrigger_');
   menu.addToUi();
     }
@@ -11,11 +11,8 @@ function onInstall() {
     onOpen();
     }
 
-function StartButton_(){
-  createTrigger();
-}
-
-function createTrigger() {
+// Creates time trigger - happens every day at 1pm (at Hour 13)
+function createTrigger_() {
   ScriptApp.newTrigger('EmailRemindersGeneral')
   .timeBased()
   .everyDays(1)
@@ -23,6 +20,7 @@ function createTrigger() {
   .create();
 }
 
+// To stop time trigger - end the reminders
 function deleteTrigger_(){
  var triggers = ScriptApp.getProjectTriggers();
   
@@ -31,6 +29,7 @@ function deleteTrigger_(){
  }
 }
 
+// Labels cells W1 to Z1 with headers used for reminders
 function prepareSheet_() {
   var sheet = SpreadsheetApp.getActiveSheet();
   var headers = [
@@ -41,31 +40,34 @@ function prepareSheet_() {
   sheet.getRange('W1:Z1').setValues([headers]).setFontWeight('bold');
 }
 
-function EmailRemindersGeneral() {
-  //Skip week-end
+function emailRemindersGeneral() {
+  // Skip week-end
   var day = new Date();
     if (day.getDay()>5 || day.getDay()==0) {
       return;}
    
-      //Rest of code
-      var SS = SpreadsheetApp.getActiveSpreadsheet();
-      var ss = SS.getActiveSheet();
-      var url = '';
-      url += SS.getUrl();
-      url += '#gid=';
-      url += ss.getSheetId();
+  // Pulls data for including URL link in email
+  var SS = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SS.getActiveSheet();
+  var url = '';
+  url += SS.getUrl();
+  url += '#gid=';
+  url += ss.getSheetId();
   
-      var sheet = SpreadsheetApp.getActiveSheet();
-      var range = sheet.getRange("A2:Z");
-      var UserData = range.getDisplayValues();
-      
-      for (i in UserData) {
-        var row = UserData[i];
-        if(row[22] == 'Y') {
-          var email = row[23];
-          var subject = row[24];
-          var message = row[25] + '\n\nLink to spreadsheet: ' + url;
-          MailApp.sendEmail(email, subject, message);
+  // Gets data from most of the sheet 
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var range = sheet.getRange("A2:Z");
+  var UserData = range.getDisplayValues();
+  
+  // Sends emails for each row (if col 22 lists 'Y') 
+  // with email, subject & message in specified columns
+  for (i in UserData) {
+    var row = UserData[i];
+    if(row[22] == 'Y') {
+      var email = row[23];
+      var subject = row[24];
+      var message = row[25] + '\n\nLink to spreadsheet: ' + url;
+      MailApp.sendEmail(email, subject, message);
     }
   }
 }
