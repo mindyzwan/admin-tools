@@ -1,0 +1,46 @@
+// Creates a new spreadsheet for each individual person's name in a list of data and their corresponding data
+function newSpreadsheet() {
+  var sheet = SpreadsheetApp.getActiveSheet(); // Sets variable 'sheet' to active sheet in this spreadsheet
+  var lastRow = sheet.getLastRow(); // Gets the last row # in the spreadsheet
+  var pmNames = sheet.getRange(1,1,lastRow,1).getValues();
+  var emailSheet = SpreadsheetApp.openById('1fjAoPDuPZuJ-KjBsrGcRy5CRx2tR4YNPuGcVKDWrspQ').getActiveSheet();
+  emailSheet.getRange(1,1,lastRow,1).setValues(pmNames);
+  var yourNewSheet = {};
+  
+  for (var i = 0; i < pmNames.length; i++) {
+    var queryData = pmNames[i];
+    SpreadsheetApp.getActiveSheet().getRange("D1").setFormula('=Query(\'Initial Data\'!A:I, "SELECT A,B,C,D,E,F,G,H,I WHERE A= \'' + queryData + '\'",0)'); // Filter the data according to Query formula
+    var projectData = sheet.getRange(1,4,200,10).getValues();
+    var headers = sheet.getRange(1,15,1,10).getValues();
+    var ssNew = SpreadsheetApp.create("2019 Client Surveys - " + pmNames[i]);
+    var ssURL = ssNew.getUrl();
+    var openSS = SpreadsheetApp.openByUrl(ssURL).getActiveSheet();
+    openSS.getRange(1,1,1,10).setValues(headers).setFontWeight("bold");
+    openSS.getRange(2,1,200,10).setValues(projectData);
+    openSS.autoResizeColumns(1,10);
+    openSS.getRange(2,5,projectData.length,1).setNumberFormat("#.###%");
+    openSS.getRange(2,4,projectData.length,1).setNumberFormat("$###,###,###,###.00");
+    emailSheet.getRange(i+1,2,1,1).setValue(ssURL);
+  }
+  SpreadsheetApp.getActiveSheet().getRange("D1").setFormula('');
+}
+
+// Fixed a couple of issues I noticed in the data
+function fixData() {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var data = sheet.getDataRange().getValues();
+  var dataLength = data.length;
+  for (var i = 1; i < dataLength; i++) {
+    var cellValue = sheet.getRange(i+1,8,1,1).getValues();
+    var client1Value = sheet.getRange(i+1,6,1,1).getValues();
+    var equal = sheet.getRange(i+1,10,1,1).getValues();
+    var notBlank = sheet.getRange(i+1,11,1,1).getValues();
+    if (equal == "N" && notBlank == "N"){ 
+     var rowData = sheet.getRange(i+1,1,1,5).getValues();
+     var clientData = sheet.getRange(i+1,8,1,2).getValues();
+     var lastRowData = sheet.getLastRow();
+     sheet.getRange(lastRowData+1,1,1,5).setValues(rowData);
+     sheet.getRange(lastRowData+1,6,1,2).setValues(clientData);
+     }    
+  }
+}
