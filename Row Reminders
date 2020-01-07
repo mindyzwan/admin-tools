@@ -1,0 +1,91 @@
+function onOpen() {
+  var menu = SpreadsheetApp.getUi().createMenu('Email Reminders by Row');
+  menu.addItem('Prepare Sheet', 'prepareSheet_');
+  menu.addItem('Start Daily Reminders', 'createTrigger_');
+  menu.addItem('Send Emails Now', 'emailRemindersGeneral');
+  menu.addItem('Stop Daily Reminders','deleteTrigger_');
+  menu.addItem('Set Headers', 'setHeaders_');
+  menu.addToUi();
+    }
+    
+function onInstall() {
+    onOpen();
+    }
+
+// Creates time trigger - happens every day at 1pm (at Hour 13)
+function createTrigger_() {
+  ScriptApp.newTrigger('EmailRemindersGeneral')
+  .timeBased()
+  .everyDays(1)
+  .atHour(13)
+  .create();
+}
+
+// Deletes time trigger - end the reminders
+function deleteTrigger_(){
+ var triggers = ScriptApp.getProjectTriggers();
+  
+ for (var i = 0; i < triggers.length; i++) {
+   ScriptApp.deleteTrigger(triggers[i]);
+ }
+}
+
+// Labels cells with headers used for reminders
+function prepareSheet_() {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var headers = [
+    'Send (Y/N)',
+    'Email',
+    'Subject',
+    'Message'];
+  var lastCol = sheet.getLastColumn();
+  PropertiesService.getScriptProperties().setProperty('lastColumn', lastCol);
+  sheet.getRange(1, lastCol + 1, 1, 4).setValues([headers]).setFontWeight('bold');
+}
+
+// Finds headers if already existing
+function setHeaders() {
+  var sheet = SpreadsheetApp.getActiveSheet();
+  var lastCol = sheet.getLastColumn();
+  var topRow = sheet.getDataRange(1, lastCol).getValues();
+  Logger.log(topRow);
+  //PropertiesService.getScriptProperties().setProperty('lastColumn', headerLastCol);
+}
+
+
+function emailRemindersGeneral() {
+  // Skip weekend
+  var day = new Date();
+    if (day.getDay()>5 || day.getDay()==0) {
+      return;}
+   
+  // Pulls data for including URL link in email
+  var SS = SpreadsheetApp.getActiveSpreadsheet();
+  var ss = SS.getActiveSheet();
+  var url = '';
+  url += SS.getUrl();
+  url += '#gid=';
+  url += ss.getSheetId();
+  
+  // Gets data from most of the sheet 
+  var range = ss.getDataRange();
+  var userData = range.getDisplayValues();
+  
+  // Sets column variable
+  var headerCol = PropertiesService.getScriptProperties().getProperty('lastColumn');
+  headerCol = +headerCol;
+  
+  // Sends emails for each row (if Send column lists 'Y') 
+  // with email, subject & message in specified columns
+  for (i in userData) {
+    var row = userData[i];
+    Logger.log(row[headerCol]);
+    if(row[headerCol] == 'Y') {
+      var email = row[headerCol + 1];
+      var subject = row[headerCol + 2];
+      var message = row[headerCol + 3] + '\n\nLink to spreadsheet: ' + url;
+      MailApp.sendEmail(email, subject, message);
+    }
+  }
+}
+
